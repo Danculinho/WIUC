@@ -28,6 +28,7 @@ const MOCK = (opts) => `(function () {
     localStorage.setItem('wiuc.school', ${JSON.stringify(STU)}); localStorage.setItem('wiuc.lang', 'sk');
     ${opts.reader ? "localStorage.removeItem('wiuc.livePin'); localStorage.removeItem('wiuc.liveQueue');" : ''}
     ${opts.writer ? "localStorage.setItem('wiuc.livePin', '1234');" : ''}
+    ${opts.seed ? `localStorage.setItem('__mock', ${JSON.stringify(JSON.stringify(opts.seed))});` : ''}
     ${opts.slow ? 'window.__liveDelay = 900;' : ''}
     ${opts.offline ? 'window.__liveOffline = true;' : ''}
     ${opts.fresh ? "localStorage.removeItem('__mock'); localStorage.removeItem('wiuc.livePin'); localStorage.removeItem('wiuc.liveQueue');" : ''}
@@ -226,6 +227,22 @@ try {
   check('no signal: writer controls still there', await w3.eval(`!!document.querySelector('.live-write')`));
   check('no signal: says so', /Bez spojenia/.test(await w3.eval(txt('.live-upd'))), `(${await w3.eval(txt('.live-upd'))})`);
   await w3.close();
+
+  // a match decided on penalties: the note on full time is shown
+  const K = Date.UTC(2026, 10, 6, 16, 0, 0), M = 'football|2026-11-06|17:00';
+  const seed = { roster: null, rows: [
+    { id: 'p1', ts: K - 60000, match: M, type: 'lineup', minute: '', a: '2,3,4,6,11,12,14,15,18,19,22', b: '22', note: '22.5', deleted: 0 },
+    { id: 'p2', ts: K, match: M, type: 'k1', minute: '', a: '', b: '', note: '', deleted: 0 },
+    { id: 'p3', ts: K + 360000, match: M, type: 'goal', minute: '6', a: '12', b: '', note: '', deleted: 0 },
+    { id: 'p4', ts: K + 2940000, match: M, type: 'ogoal', minute: '', a: '', b: '', note: '', deleted: 0 },
+    { id: 'p5', ts: K + 3030000, match: M, type: 'ft', minute: '45', a: '', b: '', note: 'penalty 3 : 4', deleted: 0 },
+  ] };
+  const pen = await open(browser, { url: true, reader: true, seed });
+  await pen.goto(base + '?now=2026-11-08T10:00#/zapas/2026-11-06/1700', { settleMs: 900 });
+  const pc = await pen.eval(txt('.live-clock'));
+  check('penalty result shown at full time', /Koniec zápasu/.test(pc) && /penalty 3 : 4/.test(pc), `(${pc})`);
+  check('penalty result in the timeline', /penalty 3 : 4/.test(await pen.eval(txt('.live-timeline li'))));
+  await pen.close();
 } finally {
   await browser.close();
 }

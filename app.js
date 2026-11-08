@@ -1128,7 +1128,7 @@
       } else if (r.type === "k1") { d.phase = "h1"; d.k1 = r; }
       else if (r.type === "h1") d.phase = "ht";
       else if (r.type === "k2") { d.phase = "h2"; d.k2 = r; }
-      else if (r.type === "ft") d.phase = "ft";
+      else if (r.type === "ft") { d.phase = "ft"; d.ftNote = r.note || ""; }   // note: e.g. "penalty 2 : 3"
       else if (r.type === "goal") { d.score[0]++; if (r.a) st(r.a).g++; }
       else if (r.type === "ogoal") d.score[1]++;
       else if (r.type === "yellow") { st(r.a).y++; if (st(r.a).y >= 2) d.field = d.field.filter(function (n) { return n !== r.a; }); }
@@ -1159,7 +1159,7 @@
   function clockText(d) {
     if (d.phase === "pre") return L("Pred zápasom", "Before kick-off");
     if (d.phase === "ht") return L("Polčas", "Half-time");
-    if (d.phase === "ft") return L("Koniec zápasu", "Full time");
+    if (d.phase === "ft") return L("Koniec zápasu", "Full time") + (d.ftNote ? " · " + d.ftNote : "");
     if (liveOverdue(d)) return d.phase === "h1" ? L("1. polčas asi skončil", "First half probably over") : L("Zápas asi skončil", "Match probably over");
     return (d.phase === "h1" ? L("1. polčas", "1st half") : L("2. polčas", "2nd half")) + " · " + liveMinute(d) + "'";
   }
@@ -1169,7 +1169,7 @@
       case "k1": return L("Výkop", "Kick-off");
       case "h1": return L("Koniec 1. polčasu", "Half-time");
       case "k2": return L("Začiatok 2. polčasu", "Second half starts");
-      case "ft": return L("Koniec zápasu", "Full time");
+      case "ft": return L("Koniec zápasu", "Full time") + (r.note ? " · " + r.note : "");
       case "goal": return L("Gól STU", "STU goal") + ": " + (r.a ? pname(r.a) : "?") + (r.b ? " (" + L("asistencia", "assist") + " " + pname(r.b) + ")" : "");
       case "ogoal": return L("Gól súpera", "Opponent goal");
       case "yellow": return L("Žltá karta", "Yellow card") + ": " + pname(r.a);
