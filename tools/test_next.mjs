@@ -19,6 +19,14 @@ function check(name, ok, detail) {
 const browser = await Browser.launch();
 try {
   const page = await browser.newPage({ width: 1440, height: 900, reducedMotion: true });
+  // Friday's football results are entered by the organiser on the day; clear them so the checks below stay fixed
+  await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `(function () {
+    var store;
+    Object.defineProperty(window, 'WIUC_DATA', { configurable: true, get: function () { return store; }, set: function (v) {
+      v.events.forEach(function (e) { if (e.sport === 'football' && e.day === '2026-11-06') { e.resA = ''; e.resB = ''; } });
+      store = v;
+    } });
+  })();` });
   const card = () => page.eval(() => {
     const c = document.querySelector('.next-card');
     return c ? { text: c.textContent.replace(/\s+/g, ' ').trim(), route: (c.querySelector('a.route') || {}).href || '' } : null;

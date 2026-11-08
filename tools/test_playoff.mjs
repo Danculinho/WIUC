@@ -22,7 +22,28 @@ function check(name, ok, detail) {
 const PATCH = `(function () {
   var S = function (id) { return { label: id, school: id, squad: null }; };
   function ko(e, sport, cat, game) { return e.sport === sport && e.cat === cat && !e.pool && e.game === game; }
+  // the organiser fills in names and results during the tournament: start from the published placeholders
+  var R16 = { 1: ['1A', '2G'], 2: ['1B', '2F'], 3: ['1C', '2E'], 4: ['1D', '2H'], 5: ['1E', '2D'], 6: ['1F', '2C'], 7: ['1G', '2B'], 8: ['1H', '2A'] };
+  var QF = { 9: ['(1)', '(2)'], 10: ['(3)', '(4)'], 11: ['(5)', '(6)'], 12: ['(7)', '(8)'] };
+  var P = function (label) { return { label: label, school: null, squad: null }; };
+  // quarter-finals by kick-off time, as first published (the organiser renumbered them later)
+  var QF_AT = { '08:40': ['10'], '09:00': ['11', '12'], '09:40': ['9'] };
+  function reset(d) {
+    var seen09 = 0;
+    d.events.forEach(function (e) {
+      if (e.sport !== 'football' || e.cat !== 'M') return;
+      e.resA = ''; e.resB = '';
+      if (e.pool) return;
+      var pair = null;
+      if (/1\\/8/i.test(e.stage)) pair = R16[e.game];
+      else if (/^quarter/i.test(e.stage)) { var g = QF_AT[e.time] && QF_AT[e.time][e.time === '09:00' ? seen09++ : 0]; if (g) { e.game = g; pair = QF[g]; } }
+      else if (/^semi/i.test(e.stage)) { e.game = ''; pair = e.time === '11:00' ? ['(11)', '(12)'] : ['(9)', '(10)']; }
+      else if (/final/i.test(e.stage)) pair = ['', ''];
+      if (pair) { e.a = P(pair[0]); e.b = P(pair[1]); }
+    });
+  }
   function fix(d) {
+    reset(d);
     var semis = [];
     d.events.forEach(function (e) {
       if (ko(e, 'football', 'M', '1') && /1\\/8/i.test(e.stage)) { e.a = S('slovak-university-of-technology-in-bratislava'); e.b = S('czech-technical-university'); e.resA = '2'; e.resB = '1'; }
